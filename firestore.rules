@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: {userId} (matches Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, format: email)
+    //   - role: string (required, enum: ['STUDENT', 'REFERRER', 'SPECIALIST'])
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //
+    // Collection: referrals
+    // Document ID: {referralId}
+    // Fields:
+    //   - id: string (required)
+    //   - status: string (required, enum: ['DRAFT', 'PENDING', 'APPROVED', 'REJECTED'])
+    //   - patientId: string (required)
+    //   - referrerId: string (required)
+    //   - specialistId: string (required)
+    //   - patientNotes: string (optional)
+    //   - createdAt: timestamp (required)
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "YOUR_ADMIN_EMAIL@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.role in ['STUDENT', 'REFERRER', 'SPECIALIST'];
+    }
+
+    function isValidReferral(data) {
+      return data.status in ['DRAFT', 'PENDING', 'APPROVED', 'REJECTED'] &&
+             data.patientId is string &&
+             data.referrerId is string &&
+             data.specialistId is string;
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.role == resource.data.role; // Role is immutable for the user
+    }
+
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.patientId || 
+        request.auth.uid == resource.data.referrerId || 
+        request.auth.uid == resource.data.specialistId ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isValidReferral(request.resource.data) && 
+                      request.auth.uid == request.resource.data.referrerId;
+      allow update: if isAuthenticated() && isValidReferral(request.resource.data) && (
+        request.auth.uid == resource.data.referrerId || 
+        request.auth.uid == resource.data.specialistId ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}

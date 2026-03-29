@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["STUDENT", "REFERRER", "SPECIALIST"] },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Referral": {
+      "title": "Referral",
+      "description": "Healthcare referral record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "type": "string", "enum": ["DRAFT", "PENDING", "APPROVED", "REJECTED"] },
+        "patientId": { "type": "string" },
+        "referrerId": { "type": "string" },
+        "specialistId": { "type": "string" },
+        "patientNotes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["status", "patientId", "referrerId", "specialistId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/referrals/{referralId}": {
+      "schema": "Referral",
+      "description": "Referral records"
+    }
+  }
+}
