@@ -66,3 +66,7 @@ CarePath was recognized at the Velocity Cornerstone Finals for its strategic piv
 
 ---
 *Developed for the Waterloo Healthcare Community.*
+
+## 📝 Development Notes
+
+This repository is actively maintained and ready for development contributions.
