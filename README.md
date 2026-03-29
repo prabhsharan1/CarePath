@@ -65,4 +65,4 @@ CarePath is built with healthcare-grade security principles:
 CarePath was recognized at the Velocity Cornerstone Finals for its strategic pivot from a general health app to a targeted, high-impact solution for the specific "referral black hole" experienced by university students and campus health clinics. By focusing on the *requirements* of specialists, we significantly reduced the rate of rejected referrals.
 
 ---
-*Developed for the Waterloo Healthcare Community🫀. *
+*Developed for the Waterloo Healthcare Community🫀.*
